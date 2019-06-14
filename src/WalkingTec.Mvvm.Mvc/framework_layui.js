@@ -122,10 +122,14 @@ window.ff = {
                 }
                 else {
                     data = "<div id='" + $.cookie("divid") + "' class='donotuse_pdiv'>" + data + "</div>";
-                    if ($.cookie("pagemode") === 'Tab') {
+                    if ($.cookie("pagemode") === 'Tab' && window.location.href.toLowerCase().indexOf("/home/pindex#/") === -1) {
+                        var tabmode = "";
+                        if ($.cookie("tabmode") === 'Simple') {
+                            tabmode = "layui-tab-brief";
+                        }
                         $('#DONOTUSE_MAINPANEL').css('overflow', 'hidden');
                         if ($('#DONOTUSE_MAINTAB').length === 0) {
-                            $('#DONOTUSE_MAINPANEL').html('<div class="layui-tab donotuse_pdiv" id="DONOTUSE_MAINTAB" lay-filter="maintab" lay-allowclose="true"><ul class="layui-tab-title"></ul><div class= "layui-tab-content donotuse_pdiv donotuse_fill" ></div ></div>');
+                            $('#DONOTUSE_MAINPANEL').html('<div class="layui-tab donotuse_pdiv ' + tabmode + '" id="DONOTUSE_MAINTAB" lay-filter="maintab" lay-allowclose="true"><ul class="layui-tab-title"></ul><div class= "layui-tab-content donotuse_pdiv donotuse_fill" ></div ></div>');
                             layui.element.on('tab(maintab)', function (xdata) {
                                 $('#DONOTUSE_MAINTAB .layui-tab-content > div:not(.layui-show)').css('overflow', 'auto').removeClass("donotuse_fill donotuse_pdiv");
                                 $('#DONOTUSE_MAINTAB .layui-tab-content > .layui-show').css('overflow', 'auto').addClass('donotuse_fill donotuse_pdiv');
@@ -548,7 +552,7 @@ window.ff = {
             index = 0;
         }
         var tab = "";
-        if (DONOTUSE_TABLAYID !== undefined) {
+        if (DONOTUSE_TABLAYID !== undefined && dialogid == "DONOTUSE_MAINPANEL") {
             tab = " .layui-tab-item.layui-show";
         }
         var tables = $('#' + dialogid + tab + ' table[id]');

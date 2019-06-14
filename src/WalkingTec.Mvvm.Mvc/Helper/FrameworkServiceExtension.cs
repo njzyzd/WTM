@@ -116,7 +116,10 @@ namespace WalkingTec.Mvvm.Mvc
             .ConfigureApplicationPartManager(m =>
             {
                 var feature = new ControllerFeature();
-                m.ApplicationParts.Add(new AssemblyPart(mvc));
+                if (mvc != null)
+                {
+                    m.ApplicationParts.Add(new AssemblyPart(mvc));
+                }
                 if (admin != null)
                 {
                     m.ApplicationParts.Add(new AssemblyPart(admin));
@@ -124,6 +127,7 @@ namespace WalkingTec.Mvvm.Mvc
                 m.PopulateFeature(feature);
                 services.AddSingleton(feature.Controllers.Select(t => t.AsType()).ToArray());
             })
+            .AddControllersAsServices()
             .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
             .ConfigureApiBehaviorOptions(options =>
             {
@@ -137,12 +141,15 @@ namespace WalkingTec.Mvvm.Mvc
 
             services.Configure<RazorViewEngineOptions>(options =>
             {
-                options.FileProviders.Add(
+                if (mvc != null)
+                {
+                    options.FileProviders.Add(
                     new EmbeddedFileProvider(
                         mvc,
                         "WalkingTec.Mvvm.Mvc" // your external assembly's base namespace
                     )
                 );
+                }
                 if (admin != null)
                 {
                     options.FileProviders.Add(
@@ -184,6 +191,7 @@ namespace WalkingTec.Mvvm.Mvc
                 if (context.Request.Path == "/")
                 {
                     context.Response.Cookies.Append("pagemode", configs.PageMode.ToString());
+                    context.Response.Cookies.Append("tabmode", configs.TabMode.ToString());
                 }
                 await next.Invoke();
                 if (context.Response.StatusCode == 404)

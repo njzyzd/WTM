@@ -10,4 +10,5 @@ WORKDIR /app
 COPY --from=build /app/out ./
 
 ENV ASPNETCORE_URLS http://+:80
+ENV ASPNETCORE_ENVIRONMENT Production
 ENTRYPOINT ["dotnet", "WalkingTec.Mvvm.Demo.dll"]

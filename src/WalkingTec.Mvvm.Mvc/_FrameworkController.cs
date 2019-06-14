@@ -6,7 +6,10 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using WalkingTec.Mvvm.Core;
@@ -77,9 +80,8 @@ namespace WalkingTec.Mvvm.Mvc
                 var originNeedPage = listVM.NeedPage;
                 listVM.NeedPage = false;
                 listVM.SearcherMode = ListVMSearchModeEnum.Batch;
-
-                ViewBag.SelectData = (listVM as IBasePagedListVM<TopBasePoco, BaseSearcher>).GetDataJson();
-
+                Regex r = new Regex("<script>.*?</script>");
+                ViewBag.SelectData = r.Replace((listVM as IBasePagedListVM<TopBasePoco, BaseSearcher>).GetDataJson(), "");                
                 listVM.IsSearched = false;
                 listVM.SearcherMode = ListVMSearchModeEnum.Selector;
                 listVM.NeedPage = originNeedPage;
@@ -303,6 +305,52 @@ namespace WalkingTec.Mvvm.Mvc
         }
 
         [HttpPost]
+        [ActionDescription("UploadFileRoute")]
+        public IActionResult UploadImage(SaveFileModeEnum? sm = null, string groupName = null, bool IsTemprory = true, string _DONOT_USE_CS = "default", int? width = null, int? height = null)
+        {
+            if (width == null && height == null)
+            {
+                return Upload(sm, groupName, IsTemprory, _DONOT_USE_CS);
+            }
+            CurrentCS = _DONOT_USE_CS ?? "default";
+            var FileData = Request.Form.Files[0];
+            sm = sm == null ? ConfigInfo.FileUploadOptions.SaveFileMode : sm;
+            var vm = CreateVM<FileAttachmentVM>();
+
+            Image oimage = Image.FromStream(FileData.OpenReadStream());
+            if (oimage == null)
+            {
+                return Json(new { Id = string.Empty, Name = string.Empty }, StatusCodes.Status404NotFound);
+            }
+            if (width == null)
+            {
+                width = height * oimage.Width / oimage.Height;
+            }
+            if (height == null)
+            {
+                height = width * oimage.Height /oimage.Width ;
+            }
+            MemoryStream ms = new MemoryStream();
+            oimage.GetThumbnailImage(width.Value, height.Value, null, IntPtr.Zero).Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            ms.Position = 0;
+            vm.Entity.FileName = FileData.FileName.Replace(".", "") + ".jpg";
+            vm.Entity.UploadTime = DateTime.Now;
+            vm.Entity.SaveFileMode = sm;
+            vm = FileHelper.GetFileByteForUpload(vm, ms, ConfigInfo, FileData.FileName.Replace(".", "") + ".jpg", sm, groupName);
+            vm.Entity.Length = ms.Length;
+            vm.Entity.IsTemprory = IsTemprory;
+            oimage.Dispose();
+
+            if ((!string.IsNullOrEmpty(vm.Entity.Path) && (vm.Entity.SaveFileMode == SaveFileModeEnum.Local || vm.Entity.SaveFileMode == SaveFileModeEnum.DFS)) || (vm.Entity.FileData != null && vm.Entity.SaveFileMode == SaveFileModeEnum.Database))
+            {
+                vm.DoAdd();
+                return Json(new { Id = vm.Entity.ID.ToString(), Name = vm.Entity.FileName });
+            }
+            return Json(new { Id = string.Empty, Name = string.Empty }, StatusCodes.Status404NotFound);
+        }
+
+
+        [HttpPost]
         [ActionDescription("UploadForLayUIRichTextBox")]
         public IActionResult UploadForLayUIRichTextBox(string _DONOT_USE_CS = "default")
         {
@@ -334,7 +382,7 @@ namespace WalkingTec.Mvvm.Mvc
         }
 
         [ActionDescription("获取文件")]
-        public IActionResult GetFile(Guid id, bool stream = false, string _DONOT_USE_CS = "default")
+        public IActionResult GetFile(Guid id, bool stream = false, string _DONOT_USE_CS = "default",int? width = null, int? height = null)
         {
             CurrentCS = _DONOT_USE_CS ?? "default";
             if (id == Guid.Empty)
@@ -347,6 +395,28 @@ namespace WalkingTec.Mvvm.Mvc
             {
                 data = new byte[0];
             }
+            try
+            {
+                MemoryStream ms = new MemoryStream(data);
+                Image oimage = Image.FromStream(ms);
+                ms.Close();
+                if (oimage != null && (width != null || height != null))
+                {
+                    if (width == null)
+                    {
+                        width = height * oimage.Height / oimage.Width;
+                    }
+                    if (height == null)
+                    {
+                        height = width * oimage.Width / oimage.Height;
+                    }
+                    ms = new MemoryStream();
+                    oimage.GetThumbnailImage(width.Value, height.Value, null, IntPtr.Zero).Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                    data = ms.ToArray();
+                    oimage.Dispose();
+                }
+            }
+            catch { }
             var ext = vm.Entity.FileExt.ToLower();
             var contenttype = "application/octet-stream";
             if (ext == "pdf")
@@ -390,7 +460,7 @@ namespace WalkingTec.Mvvm.Mvc
             }
             else
             {
-                html = $@"<img id='FileObject' width='100%' height='100%' border=0 src='/_Framework/GetFile?id={id}&stream=true&_DONOT_USE_CS={_DONOT_USE_CS}'/>";
+                html = $@"<img id='FileObject'  border=0 src='/_Framework/GetFile?id={id}&stream=true&_DONOT_USE_CS={_DONOT_USE_CS}'/>";
             }
             return Content(html);
 
@@ -498,7 +568,8 @@ namespace WalkingTec.Mvvm.Mvc
         [ResponseCache(Duration = 3600)]
         public string GetGithubStarts()
         {
-            return ReadFromCache<string>("githubstar", () => {
+            return ReadFromCache<string>("githubstar", () =>
+            {
                 var s = APIHelper.CallAPI<github>("https://api.github.com/repos/dotnetcore/wtm").Result;
                 return s.stargazers_count.ToString();
             }, 1800);

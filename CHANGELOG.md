@@ -3,6 +3,57 @@
 ## v2.2.x (2018-12-20)
 欢迎来到 WTM v2.2。此次更新主要是将 .Net Core 升级到 v2.2.0，并新增 Layui 组件。
 
+### v2.2.42 (2019-5-28)
+
+* **修改：** FrameworkMenu表中加入string类型的CustumIcon字段，已有项目可以手动修改数据库，添加这个字段
+
+#### React前后端分离模式
+
+* **新增：** 菜单维护加入自定义图标，可以设置antd自带图标
+* **优化：** 优化编译速度，优化布局
+
+
+#### 前后端不分离模式
+
+* **新增：** Appsettings中增加TabMode配置，设置layui模式下Tab页样式 ，可选配置有Default和Simple
+* **新增：** Appsettings中增加IsFilePublic配置，可以设置附件是否不需要登陆就可以查看和下载 
+
+
+### v2.2.40 (2019-5-18)
+
+* **修改：** 修复枚举导出时不显示的bug 
+
+#### 前后端分离模式
+
+* **修改：** 修复React依赖报错的问题 
+
+
+### v2.2.39 (2019-5-10)
+
+* **修改：** 修复代码生成器对关联字段生成ImportVM时的bug 
+
+#### 前后端不分离模式
+
+* **修改：** upload控件增加修改尺寸的选项，当UploadType为ImageFile时，通过设置ThumbWidth和ThumbHeight，可以让服务器保存缩小后的图片
+* **修改：** upload控件增加缩略图预览，当UploadType为ImageFile时默认开启缩略图预览，通过ShowPreview，PreviewWidth，PreviewHeight等参数可配置
+* **修改：** 更改绑定布尔值时checkbox的样式 
+* **修改：** 修复layui模式下登录用户头像显示的问题，已经生成的项目可以将以下两个文件覆盖自己的项目对应的文件
+
+https://github.com/dotnetcore/WTM/blob/develop/demo/WalkingTec.Mvvm.Demo/ViewModels/HomeVMs/LoginVM.cs
+
+https://github.com/dotnetcore/WTM/blob/develop/demo/WalkingTec.Mvvm.Demo/Views/Home/Header.cshtml
+
+### v2.2.38 (2019-4-29)
+
+* **修改：** 修改DpWhere逻辑，DpWhere中多个字段参数之间现在是or的关系
+
+#### 前后端不分离模式
+
+* **新增：** 新增layui下根据数据控制行内动作按钮是否显示。现在可以在Action上调用BindVisiableColName方法来指定某个隐藏列的名称，该隐藏列值为字符串'true'的时候，action按钮才显示
+* **修改：** 修改了tab页模式下，多层弹出窗口grid不刷新的bug
+* **修改：** 修复selector在searchpanel里，清空了不起作用的bug
+* **修改：** 修改pindex页面使用tab，导致代码生成器显示错位的bug
+
 ### v2.2.36 (2019-4-25)
 
 #### 前后端不分离模式
